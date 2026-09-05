@@ -4,9 +4,9 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   Activity, ArrowUpRight, Bell, Bot, Building2, CalendarDays, Check, ChevronDown, ChevronRight,
-  CircleAlert, Clock3, Database, Filter, FolderKanban, Headphones, LayoutDashboard, Menu,
-  MessageSquare, MoreHorizontal, Phone, Plus, Search, Send, Settings2, ShieldCheck, Sparkles,
-  Target, UserRound, Users, X, Zap,
+  CircleAlert, Clock3, Database, Filter, FolderKanban, Globe, Headphones, Info, LayoutDashboard, Menu,
+  MessageSquare, MoreHorizontal, Phone, Plus, RotateCcw, Save, Search, Send, Settings2, ShieldAlert, ShieldCheck, Sparkles,
+  Target, UserPlus, UserRound, Users, X, Zap,
 } from 'lucide-react'
 
 export const nav = [
@@ -97,7 +97,13 @@ export function Sidebar({ active, onSelect }: { active: string; onSelect: (id: s
         })}
       </nav>
       <div className="sidebar-bottom">
-        <button className="nav-item"><Settings2 size={17} /><span>Settings</span></button>
+        <button
+          className={active === 'settings' ? 'nav-item active' : 'nav-item'}
+          onClick={() => onSelect('settings')}
+        >
+          <Settings2 size={17} />
+          <span>Settings</span>
+        </button>
         <div className="profile">
           <Avatar initials="SG" tone="coral" small />
           <div><b>Sarah Goodman</b><small>Admin</small></div>
@@ -590,6 +596,1121 @@ export function ContactDatabase() {
   )
 }
 
+export function Settings() {
+  const [subTab, setSubTab] = useState<'general' | 'contacts' | 'outreach' | 'followup' | 'closing' | 'orchestrator'>('general')
+  const [toast, setToast] = useState('')
+
+  // General Settings State
+  const [workspaceName, setWorkspaceName] = useState('Goodman & Co.')
+  const [workspaceDomain, setWorkspaceDomain] = useState('goodman.co')
+  const [timezone, setTimezone] = useState('America/Chicago')
+  const [team, setTeam] = useState([
+    { name: 'Sarah Goodman', role: 'Owner / Admin', email: 'sarah@goodman.co', initials: 'SG', tone: 'coral' },
+    { name: 'Maya Chen', role: 'VP of Revenue', email: 'maya@goodman.co', initials: 'MC', tone: 'gold' },
+    { name: 'Marcus Bell', role: 'Revenue Operations', email: 'marcus@goodman.co', initials: 'MB', tone: 'blue' },
+  ])
+  const [newEmail, setNewEmail] = useState('')
+  const [newRole, setNewRole] = useState('Sales Representative')
+  const [showInvite, setShowInvite] = useState(false)
+  const [notifEscalations, setNotifEscalations] = useState(true)
+  const [notifDailyBriefing, setNotifDailyBriefing] = useState(true)
+  const [notifWeeklySummary, setNotifWeeklySummary] = useState(true)
+  const [notifHighValue, setNotifHighValue] = useState(true)
+
+  // Contact Finding Settings State
+  const [cfFormality, setCfFormality] = useState(3)
+  const [cfDirectness, setCfDirectness] = useState(4)
+  const [cfDailyQuota, setCfDailyQuota] = useState(50)
+  const [cfMinFitScore, setCfMinFitScore] = useState(85)
+  const [cfAutoEnrich, setCfAutoEnrich] = useState(true)
+  const [cfEscalateEnterprise, setCfEscalateEnterprise] = useState(true)
+
+  // Outreach Agent Settings State
+  const [outreachFormality, setOutreachFormality] = useState(2) // 1=Casual, 5=Formal
+  const [outreachDirectness, setOutreachDirectness] = useState(4) // 1=Direct, 5=Relationship
+  const [outreachVoice, setOutreachVoice] = useState('Sarah (Warm Consultative)')
+  const [outreachDailyLimit, setOutreachDailyLimit] = useState(25)
+  const [outreachEscalateCompetitor, setOutreachEscalateCompetitor] = useState(true)
+  const [outreachEscalateIntegration, setOutreachEscalateIntegration] = useState(true)
+  const [outreachSentimentGuardrail, setOutreachSentimentGuardrail] = useState(true)
+
+  // Follow-Up Agent Settings State
+  const [fuFormality, setFuFormality] = useState(3)
+  const [fuDirectness, setFuDirectness] = useState(4)
+  const [fuTouch1Days, setFuTouch1Days] = useState('1')
+  const [fuTouch2Days, setFuTouch2Days] = useState('4')
+  const [fuTouch3Days, setFuTouch3Days] = useState('8')
+  const [fuTouch4Days, setFuTouch4Days] = useState('14')
+  const [fuMaxTouches, setFuMaxTouches] = useState('4')
+  const [fuAutoPause, setFuAutoPause] = useState(true)
+  const [fuEscalateUnanswered, setFuEscalateUnanswered] = useState(3)
+
+  // Closing Agent Settings State
+  const [closingFormality, setClosingFormality] = useState(4)
+  const [closingDirectness, setClosingDirectness] = useState(3)
+  const [closingMaxDiscount, setClosingMaxDiscount] = useState(15) // %
+  const [closingMaxTermExt, setClosingMaxTermExt] = useState('30') // days
+  const [closingPaymentTerms, setClosingPaymentTerms] = useState('Allow Net 45 without approval')
+  const [closingMutualNDA, setClosingMutualNDA] = useState(true)
+  const [closingStrictRedlines, setClosingStrictRedlines] = useState(true)
+
+  // Orchestrator Settings State
+  const [orchConfidence, setOrchConfidence] = useState(90)
+  const [orchCoordMode, setOrchCoordMode] = useState('Adaptive Parallel Hand-off')
+  const [orchBriefingTime, setOrchBriefingTime] = useState('8:30 AM')
+  const [orchSafetySwitch, setOrchSafetySwitch] = useState(false)
+
+  const triggerToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3500)
+  }
+
+  const handleSave = () => {
+    triggerToast('Settings & agent guardrails saved successfully.')
+  }
+
+  const handleReset = (tabKey: string) => {
+    if (tabKey === 'general') {
+      setWorkspaceName('Goodman & Co.')
+      setWorkspaceDomain('goodman.co')
+      setTimezone('America/Chicago')
+      setNotifEscalations(true)
+      setNotifDailyBriefing(true)
+      setNotifWeeklySummary(true)
+      setNotifHighValue(true)
+    } else if (tabKey === 'contacts') {
+      setCfFormality(3)
+      setCfDirectness(4)
+      setCfDailyQuota(50)
+      setCfMinFitScore(85)
+      setCfAutoEnrich(true)
+      setCfEscalateEnterprise(true)
+    } else if (tabKey === 'outreach') {
+      setOutreachFormality(2)
+      setOutreachDirectness(4)
+      setOutreachVoice('Sarah (Warm Consultative)')
+      setOutreachDailyLimit(25)
+      setOutreachEscalateCompetitor(true)
+      setOutreachEscalateIntegration(true)
+      setOutreachSentimentGuardrail(true)
+    } else if (tabKey === 'followup') {
+      setFuFormality(3)
+      setFuDirectness(4)
+      setFuTouch1Days('1')
+      setFuTouch2Days('4')
+      setFuTouch3Days('8')
+      setFuTouch4Days('14')
+      setFuMaxTouches('4')
+      setFuAutoPause(true)
+      setFuEscalateUnanswered(3)
+    } else if (tabKey === 'closing') {
+      setClosingFormality(4)
+      setClosingDirectness(3)
+      setClosingMaxDiscount(15)
+      setClosingMaxTermExt('30')
+      setClosingPaymentTerms('Allow Net 45 without approval')
+      setClosingMutualNDA(true)
+      setClosingStrictRedlines(true)
+    } else if (tabKey === 'orchestrator') {
+      setOrchConfidence(90)
+      setOrchCoordMode('Adaptive Parallel Hand-off')
+      setOrchBriefingTime('8:30 AM')
+      setOrchSafetySwitch(false)
+    }
+    triggerToast('Restored default presets for this tab.')
+  }
+
+  const handleInvite = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newEmail.trim()) return
+    const prefix = newEmail.split('@')[0]
+    const formattedName = prefix.charAt(0).toUpperCase() + prefix.slice(1)
+    const initials = (prefix.slice(0, 2)).toUpperCase()
+    setTeam([...team, {
+      name: formattedName,
+      role: newRole,
+      email: newEmail.trim(),
+      initials,
+      tone: 'green',
+    }])
+    setNewEmail('')
+    setShowInvite(false)
+    triggerToast(`Invitation sent to ${newEmail}`)
+  }
+
+  const settingsTabs = [
+    { id: 'general', label: 'General', icon: Settings2, badge: 'Workspace' },
+    { id: 'contacts', label: 'Contact Finding', icon: Target, badge: 'Agent' },
+    { id: 'outreach', label: 'Outreach Agent', icon: Phone, badge: 'Agent' },
+    { id: 'followup', label: 'Follow-Up Agent', icon: CalendarDays, badge: 'Agent' },
+    { id: 'closing', label: 'Closing Agent', icon: ShieldCheck, badge: 'Agent' },
+    { id: 'orchestrator', label: 'Orchestrator', icon: LayoutDashboard, badge: 'Core' },
+  ] as const
+
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">WORKSPACE & AGENT GOVERNANCE</p>
+          <h2>Settings & Boundaries</h2>
+          <p className="muted">Configure workspace parameters and fine-tune what each autonomous agent can decide independently.</p>
+        </div>
+        {toast && (
+          <span className="pill pill-green" style={{ padding: '8px 14px', fontSize: '11px', animation: 'fadeIn .2s ease' }}>
+            <Check size={14} /> {toast}
+          </span>
+        )}
+      </div>
+
+      <div className="settings-layout">
+        {/* Left Sub-Navigation */}
+        <Glass className="settings-subnav">
+          <p className="nav-label" style={{ padding: '4px 12px 8px' }}>SECTIONS</p>
+          {settingsTabs.map(t => {
+            const Icon = t.icon
+            const isAgent = t.badge === 'Agent' || t.badge === 'Core'
+            return (
+              <button
+                key={t.id}
+                className={`settings-subnav-btn ${subTab === t.id ? 'active' : ''}`}
+                onClick={() => setSubTab(t.id)}
+              >
+                <Icon size={16} />
+                <span>{t.label}</span>
+                {isAgent && <Pill tone="gold" style={{ padding: '1px 5px', fontSize: '9px', marginLeft: 'auto' }}>Agent</Pill>}
+              </button>
+            )
+          })}
+        </Glass>
+
+        {/* Right Content Panel */}
+        <div className="settings-panel">
+          {/* GENERAL TAB */}
+          {subTab === 'general' && (
+            <>
+              <Glass className="settings-header-box">
+                <p className="eyebrow">WORKSPACE PROFILE</p>
+                <h2>Goodman & Co. Workspace</h2>
+                <p className="muted">Manage your core team, regional settings, and operational notification triggers.</p>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Organization & Locale</h3>
+                    <p className="settings-section-desc">Primary workspace identity and operating timezone.</p>
+                  </div>
+                </div>
+                <div className="settings-grid-2">
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      WORKSPACE NAME
+                    </label>
+                    <input
+                      className="settings-input"
+                      value={workspaceName}
+                      onChange={e => setWorkspaceName(e.target.value)}
+                    />
+                  </div>
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      COMPANY DOMAIN
+                    </label>
+                    <input
+                      className="settings-input"
+                      value={workspaceDomain}
+                      onChange={e => setWorkspaceDomain(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="settings-control-group">
+                  <label className="settings-label">
+                    <span>OPERATIONAL TIMEZONE</span>
+                    <span className="hint">Used for scheduled outreach & daily briefing recaps</span>
+                  </label>
+                  <select
+                    className="settings-select"
+                    value={timezone}
+                    onChange={e => setTimezone(e.target.value)}
+                  >
+                    <option value="America/Chicago">America/Chicago (CST) — US Central (Default)</option>
+                    <option value="America/New_York">America/New_York (EST) — US Eastern</option>
+                    <option value="America/Denver">America/Denver (MST) — US Mountain</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles (PST) — US Pacific</option>
+                    <option value="Europe/London">Europe/London (GMT) — United Kingdom</option>
+                    <option value="Europe/Paris">Europe/Paris (CET) — Central Europe</option>
+                    <option value="Asia/Singapore">Asia/Singapore (SGT) — Asia Pacific</option>
+                  </select>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Team Members & Access</h3>
+                    <p className="settings-section-desc">Authorized operators with access to agent queues and escalation inboxes.</p>
+                  </div>
+                  <button className="quiet-button" onClick={() => setShowInvite(!showInvite)}>
+                    <UserPlus size={14} /> Invite Member
+                  </button>
+                </div>
+
+                {showInvite && (
+                  <form onSubmit={handleInvite} style={{ display: 'flex', gap: 10, padding: 12, background: '#1c1713', border: '1px solid #4a3d31', borderRadius: 9, marginBottom: 8 }}>
+                    <input
+                      className="settings-input"
+                      style={{ flex: 1 }}
+                      placeholder="colleague@goodman.co"
+                      value={newEmail}
+                      onChange={e => setNewEmail(e.target.value)}
+                      autoFocus
+                    />
+                    <select
+                      className="settings-select"
+                      style={{ width: 170 }}
+                      value={newRole}
+                      onChange={e => setNewRole(e.target.value)}
+                    >
+                      <option value="Sales Representative">Sales Rep</option>
+                      <option value="Account Executive">Account Exec</option>
+                      <option value="Revenue Operations">RevOps</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                    <button type="submit" className="primary-button" style={{ padding: '8px 14px' }}>
+                      Add
+                    </button>
+                  </form>
+                )}
+
+                <div className="settings-grid-1">
+                  {team.map(member => (
+                    <div className="team-member-row" key={member.email}>
+                      <div className="team-member-info">
+                        <Avatar initials={member.initials} tone={member.tone as any} small />
+                        <div>
+                          <b>{member.name}</b>
+                          <span>{member.email}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Pill tone={member.role.includes('Admin') ? 'coral' : member.role.includes('VP') ? 'gold' : 'blue'}>
+                          {member.role}
+                        </Pill>
+                        {member.role.includes('Admin') ? (
+                          <span style={{ fontSize: 11, color: '#8f8276' }}>Owner</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-button"
+                            style={{ color: '#8f8276', fontSize: 11 }}
+                            onClick={() => setTeam(team.filter(t => t.email !== member.email))}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Notification Preferences</h3>
+                    <p className="settings-section-desc">Choose when and how Sarah Goodman is alerted to agent decisions.</p>
+                  </div>
+                </div>
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Instant Escalation Alerts</b>
+                      <span>Immediately notify Sarah via SMS & Slack whenever an agent requires human judgment.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={notifEscalations} onChange={e => setNotifEscalations(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Daily 8:30 AM Executive Briefing</b>
+                      <span>Deliver an orchestrated summary of conversations, replies, and closed opportunities every morning.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={notifDailyBriefing} onChange={e => setNotifDailyBriefing(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Weekly Pipeline Momentum Summary</b>
+                      <span>Digest of overall funnel velocity, closed ARR, and objection patterns every Friday afternoon.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={notifWeeklySummary} onChange={e => setNotifWeeklySummary(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>VIP Account Alerts ($30k+ Pipeline Value)</b>
+                      <span>Special notification whenever a high-tier prospect accepts an introductory call or opens a proposal.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={notifHighValue} onChange={e => setNotifHighValue(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('general')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+
+          {/* CONTACT FINDING AGENT TAB */}
+          {subTab === 'contacts' && (
+            <>
+              <Glass className="settings-header-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="agent-orb" style={{ width: 36, height: 36 }}><Target size={18} /></span>
+                  <div>
+                    <p className="eyebrow">AUTONOMOUS AGENT CONFIGURATION</p>
+                    <h2>Contact Finding Agent</h2>
+                  </div>
+                </div>
+                <div className="settings-caption-badge">
+                  <Info size={15} />
+                  <span>Define what this agent can decide on its own — and what always comes back to you.</span>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Discovery Persona & Search Filters</h3>
+                    <p className="settings-section-desc">Govern how selectively this agent scans corporate networks and evaluates decision-maker relevance.</p>
+                  </div>
+                </div>
+
+                <div className="tone-slider-wrap">
+                  <div className="settings-label">
+                    <span>EVALUATION PRECISION</span>
+                    <span className="hint">
+                      {cfDirectness <= 2 ? 'Broad Discovery (High Volume)' : cfDirectness === 3 ? 'Balanced Match' : 'Precision Fit (Strict Relevancy)'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={cfDirectness}
+                    onChange={e => setCfDirectness(Number(e.target.value))}
+                    className="tone-slider"
+                  />
+                  <div className="tone-slider-labels">
+                    <span className={cfDirectness === 1 ? 'active-tone' : ''}>Broad Discovery</span>
+                    <span className={cfDirectness === 3 ? 'active-tone' : ''}>Balanced</span>
+                    <span className={cfDirectness === 5 ? 'active-tone' : ''}>Laser Precision</span>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>DAILY DISCOVERY QUOTA</span>
+                      <span className="hint">{cfDailyQuota} verified leads / day</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="15"
+                      max="150"
+                      step="5"
+                      value={cfDailyQuota}
+                      onChange={e => setCfDailyQuota(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                  </div>
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>MINIMUM FIT SCORE TO AUTO-APPROVE</span>
+                      <span className="hint">{cfMinFitScore} / 100</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="65"
+                      max="95"
+                      step="1"
+                      value={cfMinFitScore}
+                      onChange={e => setCfMinFitScore(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                  </div>
+                </div>
+
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Automatic Enrichment & Verification</b>
+                      <span>Verify direct dial, work email, and recent executive appointments before adding to Outreach queue.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={cfAutoEnrich} onChange={e => setCfAutoEnrich(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Escalate Enterprise Accounts (&gt;$100M ARR / 500+ Staff)</b>
+                      <span>Flag large multi-stakeholder enterprise accounts for Sarah to review strategy before first contact.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={cfEscalateEnterprise} onChange={e => setCfEscalateEnterprise(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="preview-card-wrap">
+                  <div className="preview-card-header">
+                    <span><Sparkles size={13} /> LIVE AGENT DECISION SIMULATION</span>
+                    <Pill tone="gold">Autonomous Action</Pill>
+                  </div>
+                  <div className="preview-message-box">
+                    <p>
+                      <strong>Target Evaluated:</strong> Maya Chen · VP of Revenue at Northstar Labs (Austin, TX)<br />
+                      <strong>Calculated Fit Score:</strong> 96 / 100 · <strong>Configured Threshold:</strong> {cfMinFitScore} / 100<br />
+                      <strong>Autonomous Decision:</strong> {96 >= cfMinFitScore ? 'Fit score exceeds threshold. Agent automatically enriches direct phone and queues for Outreach Agent at 10:00 AM.' : 'Fit score below threshold. Added to low-priority watchlist for human review.'}
+                    </p>
+                  </div>
+                  <div className="preview-message-meta">
+                    <span>Pacing limit: {cfDailyQuota} leads/day</span> · <span>Enrichment: {cfAutoEnrich ? 'Active' : 'Disabled'}</span>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('contacts')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+
+          {/* OUTREACH AGENT TAB */}
+          {subTab === 'outreach' && (
+            <>
+              <Glass className="settings-header-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="agent-orb" style={{ width: 36, height: 36 }}><Phone size={18} /></span>
+                  <div>
+                    <p className="eyebrow">AUTONOMOUS AGENT CONFIGURATION</p>
+                    <h2>Outreach Agent</h2>
+                  </div>
+                </div>
+                <div className="settings-caption-badge">
+                  <Info size={15} />
+                  <span>Define what this agent can decide on its own — and what always comes back to you.</span>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Voice Persona & Conversational Tone</h3>
+                    <p className="settings-section-desc">Adjust the acoustic presence and conversational philosophy of outbound qualification calls.</p>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="tone-slider-wrap">
+                    <div className="settings-label">
+                      <span>FORMALITY</span>
+                      <span className="hint">{outreachFormality <= 2 ? 'Casual & Approachable' : outreachFormality === 3 ? 'Professional' : 'Executive & Formal'}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={outreachFormality}
+                      onChange={e => setOutreachFormality(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                    <div className="tone-slider-labels">
+                      <span className={outreachFormality === 1 ? 'active-tone' : ''}>Casual</span>
+                      <span className={outreachFormality === 3 ? 'active-tone' : ''}>Balanced</span>
+                      <span className={outreachFormality === 5 ? 'active-tone' : ''}>Formal</span>
+                    </div>
+                  </div>
+
+                  <div className="tone-slider-wrap">
+                    <div className="settings-label">
+                      <span>PITCH STYLE</span>
+                      <span className="hint">{outreachDirectness <= 2 ? 'Direct & Pitch-forward' : outreachDirectness === 3 ? 'Problem-first' : 'Relationship & Consultative'}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={outreachDirectness}
+                      onChange={e => setOutreachDirectness(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                    <div className="tone-slider-labels">
+                      <span className={outreachDirectness === 1 ? 'active-tone' : ''}>Direct</span>
+                      <span className={outreachDirectness === 3 ? 'active-tone' : ''}>Consultative</span>
+                      <span className={outreachDirectness === 5 ? 'active-tone' : ''}>Relationship</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>SYNTHESIZED VOICE PROFILE</span>
+                    </label>
+                    <select
+                      className="settings-select"
+                      value={outreachVoice}
+                      onChange={e => setOutreachVoice(e.target.value)}
+                    >
+                      <option value="Sarah (Warm Consultative)">Sarah — Warm, natural executive tone (Default)</option>
+                      <option value="Alex (Direct & Punchy)">Alex — Crisp, concise, data-driven delivery</option>
+                      <option value="Jordan (Technical Specialist)">Jordan — Methodical, engineering empathy</option>
+                    </select>
+                  </div>
+
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>MAX CONVERSATIONS PER DAY</span>
+                      <span className="hint">{outreachDailyLimit} calls / day</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="60"
+                      step="5"
+                      value={outreachDailyLimit}
+                      onChange={e => setOutreachDailyLimit(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                  </div>
+                </div>
+
+                <div className="settings-section-title" style={{ marginTop: 10 }}>
+                  <div>
+                    <h3>Escalation & Safety Thresholds</h3>
+                    <p className="settings-section-desc">Establish redlines where the voice agent yields control to Sarah Goodman.</p>
+                  </div>
+                </div>
+
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Escalate on Direct Competitor Named</b>
+                      <span>If the prospect names an active incumbent (e.g. Outreach, Apollo, Salesloft), flag for custom competitive positioning.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={outreachEscalateCompetitor} onChange={e => setOutreachEscalateCompetitor(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Escalate Custom Security / Architecture Queries</b>
+                      <span>Immediately route calls when prospective buyers ask for proprietary security questionnaires or bespoke API connectors.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={outreachEscalateIntegration} onChange={e => setOutreachEscalateIntegration(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Sentiment Guardrail (&gt;50% Friction)</b>
+                      <span>Gracefully offer Sarah’s direct calendar if the prospect expresses annoyance or pushback.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={outreachSentimentGuardrail} onChange={e => setOutreachSentimentGuardrail(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="preview-card-wrap">
+                  <div className="preview-card-header">
+                    <span><Sparkles size={13} /> LIVE CALL OPENING SIMULATION</span>
+                    <Pill tone="blue">Voice Profile: {outreachVoice.split(' ')[0]}</Pill>
+                  </div>
+                  <div className="preview-message-box">
+                    <p>
+                      <strong>Agent ({outreachVoice.split(' ')[0]}):</strong> &ldquo;
+                      {outreachFormality <= 2 && outreachDirectness >= 3
+                        ? "Hey Maya, Sarah from SaleGoodman here! I was reading about Northstar’s revenue push this quarter — sounds like you guys are moving fast. Quick question: are your account execs spending too much time hunting contacts instead of closing?"
+                        : outreachFormality >= 4 && outreachDirectness <= 2
+                        ? "Good afternoon Ms. Chen. I am calling from SaleGoodman on behalf of Sarah Goodman. We track pipeline throughput for venture-backed B2B firms. Specifically, we help eliminate inbound routing bottlenecks. Would 15 minutes this Thursday make sense to discuss your quarterly targets?"
+                        : "Hi Maya, this is Sarah with SaleGoodman. I saw Northstar Labs is expanding your sales team. We help revenue leaders qualify high-fit prospects without bogging down account executives. Do you have a quick moment to chat about how you're handling inbound demand?"
+                      }&rdquo;
+                    </p>
+                  </div>
+                  <div className="preview-message-meta">
+                    <span>Tone: {outreachFormality <= 2 ? 'Casual' : outreachFormality >= 4 ? 'Formal' : 'Balanced'}</span> · <span>Style: {outreachDirectness <= 2 ? 'Direct' : outreachDirectness >= 4 ? 'Relationship-first' : 'Consultative'}</span>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('outreach')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+
+          {/* FOLLOW-UP AGENT TAB */}
+          {subTab === 'followup' && (
+            <>
+              <Glass className="settings-header-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="agent-orb" style={{ width: 36, height: 36 }}><CalendarDays size={18} /></span>
+                  <div>
+                    <p className="eyebrow">AUTONOMOUS AGENT CONFIGURATION</p>
+                    <h2>Follow-Up Agent</h2>
+                  </div>
+                </div>
+                <div className="settings-caption-badge">
+                  <Info size={15} />
+                  <span>Define what this agent can decide on its own — and what always comes back to you.</span>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Follow-Up Cadence & Timing Schedule</h3>
+                    <p className="settings-section-desc">Design the precise interval between multi-channel follow-up touches across email and phone.</p>
+                  </div>
+                </div>
+
+                <div className="cadence-grid">
+                  <div className="cadence-node">
+                    <b>TOUCH 1</b>
+                    <span>Initial recap & timeline</span>
+                    <select value={fuTouch1Days} onChange={e => setFuTouch1Days(e.target.value)}>
+                      <option value="1">Day 1 post-call</option>
+                      <option value="2">Day 2 post-call</option>
+                      <option value="3">Day 3 post-call</option>
+                    </select>
+                  </div>
+                  <div className="cadence-node">
+                    <b>TOUCH 2</b>
+                    <span>Value-add case study</span>
+                    <select value={fuTouch2Days} onChange={e => setFuTouch2Days(e.target.value)}>
+                      <option value="3">Day 3</option>
+                      <option value="4">Day 4</option>
+                      <option value="5">Day 5</option>
+                      <option value="6">Day 6</option>
+                    </select>
+                  </div>
+                  <div className="cadence-node">
+                    <b>TOUCH 3</b>
+                    <span>Proposal check-in</span>
+                    <select value={fuTouch3Days} onChange={e => setFuTouch3Days(e.target.value)}>
+                      <option value="7">Day 7</option>
+                      <option value="8">Day 8</option>
+                      <option value="10">Day 10</option>
+                    </select>
+                  </div>
+                  <div className="cadence-node">
+                    <b>TOUCH 4</b>
+                    <span>Break-up & archive</span>
+                    <select value={fuTouch4Days} onChange={e => setFuTouch4Days(e.target.value)}>
+                      <option value="12">Day 12</option>
+                      <option value="14">Day 14</option>
+                      <option value="18">Day 18</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="tone-slider-wrap">
+                    <div className="settings-label">
+                      <span>COMMUNICATION FORMALITY</span>
+                      <span className="hint">{fuFormality <= 2 ? 'Warm & Direct' : fuFormality === 3 ? 'Consultative' : 'Polite & Structured'}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={fuFormality}
+                      onChange={e => setFuFormality(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                    <div className="tone-slider-labels">
+                      <span className={fuFormality === 1 ? 'active-tone' : ''}>Casual</span>
+                      <span className={fuFormality === 3 ? 'active-tone' : ''}>Balanced</span>
+                      <span className={fuFormality === 5 ? 'active-tone' : ''}>Formal</span>
+                    </div>
+                  </div>
+
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>ESCALATE AFTER UNANSWERED TOUCHES</span>
+                      <span className="hint">Escalate after {fuEscalateUnanswered} touches</span>
+                    </label>
+                    <select
+                      className="settings-select"
+                      value={fuEscalateUnanswered}
+                      onChange={e => setFuEscalateUnanswered(Number(e.target.value))}
+                    >
+                      <option value={2}>Escalate after 2 unanswered touches</option>
+                      <option value={3}>Escalate after 3 unanswered touches (Recommended)</option>
+                      <option value={4}>Escalate after 4 unanswered touches</option>
+                      <option value={5}>Do not escalate — auto-archive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Auto-Pause on Inbound Activity</b>
+                      <span>Immediately halt scheduled follow-up steps if the prospect replies, books a meeting, or triggers an out-of-office autoreply.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={fuAutoPause} onChange={e => setFuAutoPause(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="preview-card-wrap">
+                  <div className="preview-card-header">
+                    <span><Sparkles size={13} /> SCHEDULED TOUCH PREVIEW</span>
+                    <Pill tone="green">Touch 2 (Day {fuTouch2Days})</Pill>
+                  </div>
+                  <div className="preview-message-box">
+                    <p>
+                      <strong>Subject:</strong> {fuFormality <= 2 ? 'Quick thought on Northstar’s pipeline + customer story' : 'Relevant benchmark for Northstar Labs: Clearpath AI implementation'}<br />
+                      <strong>Body:</strong> {fuFormality <= 2
+                        ? "Hi Maya — hope your week is off to a great start! Sending over a quick 2-page recap of how Clearpath accelerated their sales cycle by 34% within 60 days of rolling out SaleGoodman. Would love to sync for 10 minutes tomorrow afternoon if you have questions!"
+                        : "Dear Maya, following our discussion on Wednesday, I wanted to share the enclosed Clearpath AI case study documenting a 34% reduction in qualification cycle times. Does 2:00 PM tomorrow work for a brief review of implementation timelines?"
+                      }
+                    </p>
+                  </div>
+                  <div className="preview-message-meta">
+                    <span>Active Cadence: Day {fuTouch1Days} → Day {fuTouch2Days} → Day {fuTouch3Days} → Day {fuTouch4Days}</span> · <span>Escalation: After {fuEscalateUnanswered} unanswered</span>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('followup')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+
+          {/* CLOSING AGENT TAB */}
+          {subTab === 'closing' && (
+            <>
+              <Glass className="settings-header-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="agent-orb" style={{ width: 36, height: 36 }}><ShieldCheck size={18} /></span>
+                  <div>
+                    <p className="eyebrow">AUTONOMOUS AGENT CONFIGURATION</p>
+                    <h2>Closing Agent</h2>
+                  </div>
+                </div>
+                <div className="settings-caption-badge">
+                  <Info size={15} />
+                  <span>Define what this agent can decide on its own — and what always comes back to you.</span>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Autonomous Negotiation Limits & Discount Authority</h3>
+                    <p className="settings-section-desc">Set hard commercial ceilings. The agent will never exceed these parameters without an Escalation Inbox signoff.</p>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="tone-slider-wrap">
+                    <div className="settings-label">
+                      <span>MAXIMUM DISCOUNT WITHOUT APPROVAL</span>
+                      <span className="hint" style={{ color: 'var(--primary)', fontWeight: 700 }}>{closingMaxDiscount}% discount</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="25"
+                      step="1"
+                      value={closingMaxDiscount}
+                      onChange={e => setClosingMaxDiscount(Number(e.target.value))}
+                      className="tone-slider"
+                    />
+                    <div className="tone-slider-labels">
+                      <span className={closingMaxDiscount === 0 ? 'active-tone' : ''}>0% (Firm Price)</span>
+                      <span className={closingMaxDiscount === 12 ? 'active-tone' : ''}>12%</span>
+                      <span className={closingMaxDiscount === 25 ? 'active-tone' : ''}>25% Max</span>
+                    </div>
+                  </div>
+
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>MAX CONTRACT TERM EXTENSION</span>
+                      <span className="hint">{closingMaxTermExt} days beyond standard</span>
+                    </label>
+                    <select
+                      className="settings-select"
+                      value={closingMaxTermExt}
+                      onChange={e => setClosingMaxTermExt(e.target.value)}
+                    >
+                      <option value="15">Max 15 days extension</option>
+                      <option value="30">Max 30 days extension (Standard)</option>
+                      <option value="45">Max 45 days extension</option>
+                      <option value="60">Max 60 days extension (Requires pre-approval)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="settings-control-group">
+                  <label className="settings-label">
+                    <span>PAYMENT TERMS FLEXIBILITY</span>
+                    <span className="hint">Invoicing concessions agent is authorized to offer</span>
+                  </label>
+                  <select
+                    className="settings-select"
+                    value={closingPaymentTerms}
+                    onChange={e => setClosingPaymentTerms(e.target.value)}
+                  >
+                    <option value="Net 30 Only (Strict)">Strict Net 30 only — any variation escalates</option>
+                    <option value="Allow Net 45 without approval">Allow Net 45 without approval (Recommended)</option>
+                    <option value="Allow Net 60 with annual prepayment">Allow Net 60 only with full annual upfront prepay</option>
+                  </select>
+                </div>
+
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Permit Mutual NDA Signature on Goodman Standard Terms</b>
+                      <span>Agent may counter-sign standard mutual non-disclosure agreements with approved counterparties.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={closingMutualNDA} onChange={e => setClosingMutualNDA(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Escalate All Legal Redlines & Indemnity Revisions</b>
+                      <span>Any modification to liability caps, governing law, or intellectual property rights requires Sarah's signature.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={closingStrictRedlines} onChange={e => setClosingStrictRedlines(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="preview-card-wrap">
+                  <div className="preview-card-header">
+                    <span><Sparkles size={13} /> LIVE NEGOTIATION CONCESSION SIMULATION</span>
+                    <Pill tone="coral">Deal: Northstar Labs ($48,000)</Pill>
+                  </div>
+                  <div className="preview-message-box">
+                    <p>
+                      <strong>Scenario:</strong> Maya Chen requested a 20% discount ($9,600 reduction) and Net 60 invoicing.<br />
+                      <strong>Agent Action:</strong> Your configured limit is <strong>{closingMaxDiscount}%</strong>.<br />
+                      <strong>Agent Counter-Offer:</strong> &ldquo;Maya, I can honor an annual commitment incentive of {Math.min(closingMaxDiscount, 12)}% ($5,760 savings) along with {closingPaymentTerms}. For the additional requested discount, I’ve flagged this directly to Sarah Goodman for executive review.&rdquo;<br />
+                      <strong>Escalation Inbox Status:</strong> Task automatically created in Sarah’s inbox with recommendation to approve 12% and hold price.
+                    </p>
+                  </div>
+                  <div className="preview-message-meta">
+                    <span>Discount Limit: {closingMaxDiscount}%</span> · <span>Max Term: {closingMaxTermExt} Days</span> · <span>Redlines: {closingStrictRedlines ? 'Strict Escalation' : 'Automated'}</span>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('closing')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+
+          {/* ORCHESTRATOR TAB */}
+          {subTab === 'orchestrator' && (
+            <>
+              <Glass className="settings-header-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="agent-orb" style={{ width: 36, height: 36 }}><LayoutDashboard size={18} /></span>
+                  <div>
+                    <p className="eyebrow">CORE PLATFORM BRAIN</p>
+                    <h2>Orchestrator Coordination</h2>
+                  </div>
+                </div>
+                <div className="settings-caption-badge">
+                  <Info size={15} />
+                  <span>Define what this agent can decide on its own — and what always comes back to you.</span>
+                </div>
+              </Glass>
+
+              <Glass className="settings-section-card">
+                <div className="settings-section-title">
+                  <div>
+                    <h3>Autonomous Handoff & Pipeline Routing</h3>
+                    <p className="settings-section-desc">Control how the central brain delegates leads across Contact Finding, Outreach, Follow-Up, and Closing agents.</p>
+                  </div>
+                </div>
+
+                <div className="tone-slider-wrap">
+                  <div className="settings-label">
+                    <span>DELEGATION CONFIDENCE THRESHOLD</span>
+                    <span className="hint" style={{ color: 'var(--primary)', fontWeight: 700 }}>{orchConfidence}% confidence required</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="75"
+                    max="98"
+                    step="1"
+                    value={orchConfidence}
+                    onChange={e => setOrchConfidence(Number(e.target.value))}
+                    className="tone-slider"
+                  />
+                  <div className="tone-slider-labels">
+                    <span className={orchConfidence <= 80 ? 'active-tone' : ''}>75% (Aggressive Autonomy)</span>
+                    <span className={orchConfidence === 90 ? 'active-tone' : ''}>90% (Standard Balance)</span>
+                    <span className={orchConfidence >= 95 ? 'active-tone' : ''}>98% (Conservative Human-in-the-loop)</span>
+                  </div>
+                </div>
+
+                <div className="settings-grid-2">
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>COORDINATION ARCHITECTURE</span>
+                    </label>
+                    <select
+                      className="settings-select"
+                      value={orchCoordMode}
+                      onChange={e => setOrchCoordMode(e.target.value)}
+                    >
+                      <option value="Adaptive Parallel Hand-off">Adaptive Parallel Hand-off (Fastest Conversion)</option>
+                      <option value="Strict Sequenced Gate">Strict Sequenced Gate (Approval at each step)</option>
+                    </select>
+                  </div>
+
+                  <div className="settings-control-group">
+                    <label className="settings-label">
+                      <span>MORNING EXECUTIVE BRIEFING TIME</span>
+                    </label>
+                    <select
+                      className="settings-select"
+                      value={orchBriefingTime}
+                      onChange={e => setOrchBriefingTime(e.target.value)}
+                    >
+                      <option value="7:30 AM">7:30 AM Local Time</option>
+                      <option value="8:30 AM">8:30 AM Local Time (Default)</option>
+                      <option value="9:30 AM">9:30 AM Local Time</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="settings-grid-1">
+                  <div className="settings-toggle-row">
+                    <div className="settings-toggle-info">
+                      <b>Emergency Outbound Safety Killswitch</b>
+                      <span>Instantly pause all outbound calling and automated message transmissions across all agents with zero latency.</span>
+                    </div>
+                    <label className="settings-switch">
+                      <input type="checkbox" checked={orchSafetySwitch} onChange={e => setOrchSafetySwitch(e.target.checked)} />
+                      <span className="settings-slider-round" />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live Preview Card */}
+                <div className="preview-card-wrap">
+                  <div className="preview-card-header">
+                    <span><Sparkles size={13} /> ORCHESTRATOR ROUTING PREVIEW</span>
+                    <Pill tone="gold">Status: Operational (98%)</Pill>
+                  </div>
+                  <div className="preview-message-box">
+                    <p>
+                      <strong>Incoming Signal:</strong> High-intent visitor identified at Harbor Systems (Marcus Bell, CEO).<br />
+                      <strong>Confidence Score:</strong> 94% · <strong>Threshold:</strong> {orchConfidence}%<br />
+                      <strong>Routing Path:</strong> {94 >= orchConfidence ? 'Confidence exceeds 90% threshold. Orchestrator autonomously triggers Contact Finding verification and schedules Outreach Agent within 4 minutes.' : 'Confidence below threshold. Queued in Escalation Inbox for Sarah’s review.'}
+                    </p>
+                  </div>
+                  <div className="preview-message-meta">
+                    <span>Coordination Mode: {orchCoordMode}</span> · <span>Safety Switch: {orchSafetySwitch ? 'TRIGGERED (PAUSED)' : 'NORMAL'}</span>
+                  </div>
+                </div>
+              </Glass>
+
+              <Glass className="settings-footer-actions">
+                <button className="quiet-button" onClick={() => handleReset('orchestrator')}>
+                  <RotateCcw size={14} /> Reset to Defaults
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {toast && <span className="saved-toast"><Check size={14} /> {toast}</span>}
+                  <button className="primary-button" onClick={handleSave}>
+                    <Save size={14} /> Save Changes
+                  </button>
+                </div>
+              </Glass>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
 export function Login({ onContinue }: { onContinue: () => void }) {
   return (
     <main className="login-page">
@@ -640,7 +1761,7 @@ export default function SaleGoodmanApp({ initialView = 'dashboard' }: { initialV
       if (hash && hash !== active) {
         if (hash === 'login') {
           router.push('/login')
-        } else if (nav.some(n => n.id === hash) || hash === 'lead') {
+        } else if (nav.some(n => n.id === hash) || hash === 'lead' || hash === 'settings') {
           router.push(`/${hash}`)
         }
       }
@@ -678,12 +1799,13 @@ export default function SaleGoodmanApp({ initialView = 'dashboard' }: { initialV
     if (active === 'pipeline') return <Pipeline />
     if (active === 'escalations') return <Escalations />
     if (active === 'database') return <ContactDatabase />
+    if (active === 'settings') return <Settings />
     return <Dashboard onSelect={navigate} />
   }, [active, navigate])
 
   const current = nav.find(n => n.id === active)
-  const headerTitle = active === 'lead' ? 'Lead Record' : (current?.label || 'Orchestrator')
-  const headerEyebrow = active === 'dashboard' ? 'GOOD MORNING, SARAH' : 'SALEGOODMAN WORKSPACE'
+  const headerTitle = active === 'lead' ? 'Lead Record' : active === 'settings' ? 'Settings & Preferences' : (current?.label || 'Orchestrator')
+  const headerEyebrow = active === 'dashboard' ? 'GOOD MORNING, SARAH' : active === 'settings' ? 'WORKSPACE CONFIGURATION' : 'SALEGOODMAN WORKSPACE'
 
   return (
     <div className="app-shell">
