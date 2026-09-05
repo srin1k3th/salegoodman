@@ -9,23 +9,14 @@ const dmSerif = DM_Serif_Display({ subsets: ['latin'], weight: '400', variable: 
 export const metadata: Metadata = {
   title: 'SaleGoodman — Your autonomous sales team',
   description: 'SaleGoodman coordinates an autonomous sales team that finds, nurtures, and closes the right opportunities.',
-  generator: 'v0.app',
   icons: {
     icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
       {
         url: '/icon.svg',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icon.svg',
   },
 }
 
