@@ -14,7 +14,6 @@ const nav = [
   { id: 'outreach', label: 'Outreach Agent', icon: Phone },
   { id: 'followup', label: 'Follow-Up Agent', icon: CalendarDays },
   { id: 'closing', label: 'Closing Agent', icon: ShieldCheck },
-  { id: 'lead', label: 'Lead Record', icon: UserRound },
   { id: 'pipeline', label: 'Lead Pipeline', icon: FolderKanban },
   { id: 'escalations', label: 'Escalation Inbox', icon: CircleAlert },
   { id: 'database', label: 'Contact Database', icon: Database },
