@@ -591,21 +591,94 @@ export function ContactDatabase() {
 }
 
 export function Login({ onContinue }: { onContinue: () => void }) {
+  const [tab, setTab] = useState<'signin' | 'create'>('signin')
   return (
     <main className="login-page">
       <div className="login-shape shape-one" />
       <div className="login-shape shape-two" />
       <div className="login-card">
-        <div className="login-brand"><span className="brand-mark"><Sparkles size={15} /></span><span>sale<strong>goodman</strong></span></div>
-        <p className="eyebrow">WELCOME BACK</p>
-        <h1>Your autonomous<br /><em>sales team.</em></h1>
-        <p className="login-copy">A little less chasing. A lot more closing.</p>
-        <label>Email address<input type="email" placeholder="you@company.com" /></label>
-        <label>Password <a href="#forgot">Forgot?</a><input type="password" placeholder="••••••••••••" /></label>
-        <button className="primary-button login-continue" onClick={onContinue}>Continue <ArrowUpRight size={16} /></button>
-        <div className="divider"><span>or continue with</span></div>
-        <button className="google-button"><span>G</span> Continue with Google</button>
-        <small className="terms">By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.</small>
+        <div className="login-brand">
+          <span className="brand-mark"><Sparkles size={16} /></span>
+          <span>sale<strong>goodman</strong></span>
+        </div>
+        <p className="eyebrow" style={{ textAlign: 'center', marginBottom: 6 }}>AUTONOMOUS SALES PLATFORM</p>
+
+        {/* Glowing Neural Sales Pulse Wave inspired by MedBridge */}
+        <div className="pulse-wave">
+          <svg width="100%" height="48" viewBox="0 0 340 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M0 24H60L75 10L90 38L105 14L120 32L135 24H165L175 8L185 40L195 16L205 30L215 24H340"
+              stroke="url(#ecg_grad)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx="175" cy="24" r="5" fill="#ff5268">
+              <animate attributeName="r" values="4;7;4" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="175" cy="24" r="11" fill="#ff5268" opacity="0.35">
+              <animate attributeName="r" values="7;15;7" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.45;0;0.45" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <defs>
+              <linearGradient id="ecg_grad" x1="0" y1="24" x2="340" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#ff5268" />
+                <stop offset="0.5" stopColor="#a855f7" />
+                <stop offset="1" stopColor="#38bdf8" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* Tab switch */}
+        <div className="login-tabs">
+          <button
+            type="button"
+            className={`login-tab ${tab === 'signin' ? 'active' : ''}`}
+            onClick={() => setTab('signin')}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            className={`login-tab ${tab === 'create' ? 'active' : ''}`}
+            onClick={() => setTab('create')}
+          >
+            Create Account
+          </button>
+        </div>
+
+        <label>
+          EMAIL
+          <input type="email" placeholder="you@company.com" defaultValue="sarah@goodman.co" />
+        </label>
+        <label>
+          PASSWORD <a href="#forgot">Forgot?</a>
+          <input type="password" placeholder="••••••••••••" defaultValue="••••••••••••" />
+        </label>
+
+        <button className="primary-button login-continue" onClick={onContinue}>
+          {tab === 'signin' ? 'Sign In →' : 'Create Account →'}
+        </button>
+
+        <div className="divider"><span>or</span></div>
+
+        <button className="google-button">
+          <span>G</span> Continue with Google
+        </button>
+
+        <button
+          type="button"
+          className="create-account-button"
+          onClick={() => setTab(tab === 'signin' ? 'create' : 'signin')}
+        >
+          {tab === 'signin' ? 'Create an Account' : 'Back to Sign In'}
+        </button>
+
+        <small className="terms">
+          By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.
+        </small>
       </div>
       <p className="login-footer">SaleGoodman <span>·</span> Built for the beautifully ambitious</p>
     </main>
