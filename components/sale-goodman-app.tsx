@@ -1,0 +1,707 @@
+'use client'
+
+import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import {
+  Activity, ArrowUpRight, Bell, Bot, Building2, CalendarDays, Check, ChevronDown, ChevronRight,
+  CircleAlert, Clock3, Database, Filter, FolderKanban, Headphones, LayoutDashboard, Menu,
+  MessageSquare, MoreHorizontal, Phone, Plus, Search, Send, Settings2, ShieldCheck, Sparkles,
+  Target, UserRound, Users, X, Zap,
+} from 'lucide-react'
+
+export const nav = [
+  { id: 'dashboard', label: 'Orchestrator', icon: LayoutDashboard },
+  { id: 'contacts', label: 'Contact Finding', icon: Target },
+  { id: 'outreach', label: 'Outreach Agent', icon: Phone },
+  { id: 'followup', label: 'Follow-Up Agent', icon: CalendarDays },
+  { id: 'closing', label: 'Closing Agent', icon: ShieldCheck },
+  { id: 'pipeline', label: 'Lead Pipeline', icon: FolderKanban },
+  { id: 'escalations', label: 'Escalation Inbox', icon: CircleAlert },
+  { id: 'database', label: 'Contact Database', icon: Database },
+]
+
+export const contacts = [
+  { name: 'Maya Chen', role: 'VP of Revenue', company: 'Northstar Labs', location: 'Austin, TX', score: 96, initials: 'MC', tone: 'gold' },
+  { name: 'Marcus Bell', role: 'Founder & CEO', company: 'Harbor Systems', location: 'New York, NY', score: 92, initials: 'MB', tone: 'blue' },
+  { name: 'Elena Rossi', role: 'Head of Growth', company: 'Verity Health', location: 'San Francisco, CA', score: 89, initials: 'ER', tone: 'coral' },
+  { name: 'Theo Adams', role: 'CRO', company: 'Latticeworks', location: 'Chicago, IL', score: 86, initials: 'TA', tone: 'green' },
+  { name: 'Nina Patel', role: 'Director of Sales', company: 'Orbit Commerce', location: 'Boston, MA', score: 84, initials: 'NP', tone: 'lavender' },
+  { name: 'Jon Bellamy', role: 'VP Partnerships', company: 'Clearpath AI', location: 'Denver, CO', score: 81, initials: 'JB', tone: 'gold' },
+]
+
+export const leads = [
+  { name: 'Maya Chen', company: 'Northstar Labs', stage: 'Closing', initials: 'MC', value: '$48,000', tone: 'gold' },
+  { name: 'Marcus Bell', company: 'Harbor Systems', stage: 'Following Up', initials: 'MB', value: '$32,500', tone: 'blue' },
+  { name: 'Elena Rossi', company: 'Verity Health', stage: 'Contacted', initials: 'ER', value: '$18,200', tone: 'coral' },
+  { name: 'Theo Adams', company: 'Latticeworks', stage: 'Found', initials: 'TA', value: '$64,000', tone: 'green' },
+  { name: 'Nina Patel', company: 'Orbit Commerce', stage: 'Won', initials: 'NP', value: '$26,000', tone: 'lavender' },
+  { name: 'Jon Bellamy', company: 'Clearpath AI', stage: 'Lost', initials: 'JB', value: '$12,800', tone: 'gold' },
+]
+
+export function Avatar({ initials, tone = 'gold', small = false }: { initials: string; tone?: string; small?: boolean }) {
+  return <span className={`avatar avatar-${tone} ${small ? 'avatar-small' : ''}`}>{initials}</span>
+}
+
+export function Pill({ children, tone = 'blue' }: { children: React.ReactNode; tone?: string }) {
+  return <span className={`pill pill-${tone}`}>{children}</span>
+}
+
+export function Glass({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <section className={`glass ${className}`}>{children}</section>
+}
+
+export function Sidebar({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
+  return (
+    <aside className="sidebar">
+      <div className="brand" onClick={() => onSelect('dashboard')} style={{ cursor: 'pointer' }}>
+        <span className="brand-mark"><Sparkles size={15} /></span>
+        <span>sale<strong>goodman</strong></span>
+      </div>
+      <div className="workspace">
+        <div className="workspace-avatar">S</div>
+        <div><small>Workspace</small><b>Goodman & Co.</b></div>
+        <ChevronDown size={14} />
+      </div>
+      <p className="nav-label">AUTOMATION</p>
+      <nav>
+        {nav.slice(0, 5).map(item => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.id}
+              className={active === item.id ? 'nav-item active' : 'nav-item'}
+              onClick={() => onSelect(item.id)}
+            >
+              <Icon size={17} />
+              <span>{item.label}</span>
+              {item.id === 'dashboard' && <span className="live-dot" />}
+            </button>
+          )
+        })}
+      </nav>
+      <p className="nav-label nav-label-lower">WORKSPACE</p>
+      <nav>
+        {nav.slice(5).map(item => {
+          const Icon = item.icon
+          return (
+            <button
+              key={item.id}
+              className={active === item.id ? 'nav-item active' : 'nav-item'}
+              onClick={() => onSelect(item.id)}
+            >
+              <Icon size={17} />
+              <span>{item.label}</span>
+              {item.id === 'escalations' && <span className="count-badge">3</span>}
+            </button>
+          )
+        })}
+      </nav>
+      <div className="sidebar-bottom">
+        <button className="nav-item"><Settings2 size={17} /><span>Settings</span></button>
+        <div className="profile">
+          <Avatar initials="SG" tone="coral" small />
+          <div><b>Sarah Goodman</b><small>Admin</small></div>
+          <MoreHorizontal size={16} />
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+export function Header({ title, eyebrow, onMenu }: { title: string; eyebrow: string; onMenu: () => void }) {
+  return (
+    <header className="topbar">
+      <button className="mobile-menu" onClick={onMenu}><Menu size={20} /></button>
+      <div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>
+      <div className="top-actions">
+        <button className="icon-button"><Search size={18} /></button>
+        <button className="icon-button notification"><Bell size={18} /><i /></button>
+        <button className="user-button">
+          <Avatar initials="SG" tone="coral" small />
+          <span>Sarah</span>
+          <ChevronDown size={14} />
+        </button>
+      </div>
+    </header>
+  )
+}
+
+export function Metric({ label, value, change, icon: Icon, tone }: { label: string; value: string; change: string; icon: any; tone: string }) {
+  return (
+    <Glass className="metric">
+      <div className={`metric-icon ${tone}`}><Icon size={18} /></div>
+      <div><span>{label}</span><strong>{value}</strong><small className="positive">{change}</small></div>
+      <ArrowUpRight size={16} className="metric-arrow" />
+    </Glass>
+  )
+}
+
+export function Dashboard({ onSelect }: { onSelect: (id: string) => void }) {
+  return (
+    <>
+      <div className="alert-banner">
+        <div className="alert-icon"><CircleAlert size={18} /></div>
+        <div>
+          <b>3 escalations need your attention</b>
+          <span>Sarah and the agents are waiting on your decision.</span>
+        </div>
+        <button onClick={() => onSelect('escalations')}>Review inbox <ArrowUpRight size={15} /></button>
+        <X size={16} className="alert-close" />
+      </div>
+      <div className="metrics-grid">
+        <Metric label="Total Leads" value="1,284" change="+12.5% this month" icon={Users} tone="gold" />
+        <Metric label="Active Conversations" value="86" change="+8.2% this week" icon={MessageSquare} tone="blue" />
+        <Metric label="Deals Closed This Week" value="12" change="+3 from last week" icon={Check} tone="green" />
+        <Metric label="Escalations Pending" value="3" change="Needs your attention" icon={CircleAlert} tone="coral" />
+      </div>
+      <div className="dashboard-grid">
+        <Glass className="funnel-card">
+          <div className="section-heading">
+            <div><p className="eyebrow">PIPELINE OVERVIEW</p><h2>Where your leads are moving</h2></div>
+            <button className="quiet-button">This week <ChevronDown size={14} /></button>
+          </div>
+          <div className="funnel">
+            <div><span>Found</span><b>642</b><div className="funnel-bar bar-one" /></div>
+            <div><span>Contacted</span><b>318</b><div className="funnel-bar bar-two" /></div>
+            <div><span>Following Up</span><b>184</b><div className="funnel-bar bar-three" /></div>
+            <div><span>Closing</span><b>86</b><div className="funnel-bar bar-four" /></div>
+            <div><span>Won</span><b>12</b><div className="funnel-bar bar-five" /></div>
+          </div>
+        </Glass>
+        <Glass className="activity-card">
+          <div className="section-heading">
+            <div><p className="eyebrow">LIVE ACTIVITY</p><h2>Agents at work</h2></div>
+            <span className="live-status"><i /> Live</span>
+          </div>
+          <div className="activity-list">
+            {[
+              ['MC','Contact Finder','Found a high-fit contact at Northstar Labs','2m ago','gold'],
+              ['ER','Outreach Agent','Call completed with Elena Rossi','8m ago','coral'],
+              ['TA','Follow-Up Agent','Scheduled follow-up for Theo Adams','14m ago','green'],
+              ['SG','Closing Agent','Proposal sent to Maya Chen','21m ago','blue']
+            ].map(([initials, agent, text, time, tone]) => (
+              <div className="activity-row" key={text}>
+                <Avatar initials={initials} tone={tone} small />
+                <div><b>{agent}</b><p>{text}</p></div>
+                <time>{time}</time>
+              </div>
+            ))}
+          </div>
+          <button className="text-button">View all activity <ArrowUpRight size={14} /></button>
+        </Glass>
+      </div>
+      <div className="bottom-grid">
+        <Glass className="agent-health">
+          <div className="section-heading">
+            <div><p className="eyebrow">AGENT HEALTH</p><h2>Everything is flowing</h2></div>
+            <Pill tone="green">All systems operational</Pill>
+          </div>
+          <div className="health-row"><span><i className="health-dot green-dot" />Contact Finding</span><span>Searching 24/7</span><b>98%</b></div>
+          <div className="health-row"><span><i className="health-dot blue-dot" />Outreach Agent</span><span>86 calls active</span><b>94%</b></div>
+          <div className="health-row"><span><i className="health-dot gold-dot" />Closing Agent</span><span>4 negotiations</span><b>91%</b></div>
+        </Glass>
+      </div>
+    </>
+  )
+}
+
+export function ContactFinding() {
+  return (
+    <>
+      <div className="agent-hero">
+        <div>
+          <div className="agent-title">
+            <span className="agent-orb"><Target size={20} /></span>
+            <div><p className="eyebrow">CONTACT FINDING AGENT</p><h2>Find the right people, quietly.</h2></div>
+          </div>
+          <p className="muted">Your agent is scanning 2,480 companies for decision-makers who match your best customers.</p>
+        </div>
+        <div className="agent-status"><i /> Actively searching <span>·</span> Last scan 2m ago</div>
+      </div>
+      <div className="toolbar">
+        <div className="search-field"><Search size={16} /><input placeholder="Search contacts or companies" /></div>
+        <button className="filter-button"><Filter size={15} /> Filters <span>4</span></button>
+        <button className="primary-button"><Plus size={16} /> Add to Outreach Queue</button>
+      </div>
+      <div className="filter-chips">
+        <Pill tone="gold">SaaS <X size={12} /></Pill>
+        <Pill tone="blue">VP+ <X size={12} /></Pill>
+        <Pill tone="coral">United States <X size={12} /></Pill>
+        <button className="text-button">Clear all</button>
+      </div>
+      <div className="contact-grid">
+        {contacts.map(contact => (
+          <Glass className="contact-card" key={contact.name}>
+            <div className="contact-top">
+              <Avatar initials={contact.initials} tone={contact.tone} />
+              <button className="dots"><MoreHorizontal size={17} /></button>
+            </div>
+            <h3>{contact.name}</h3>
+            <p>{contact.role}</p>
+            <b className="company"><Building2 size={14} /> {contact.company}</b>
+            <span className="location">{contact.location}</span>
+            <div className="contact-bottom">
+              <span>RELEVANCE</span>
+              <strong>{contact.score}<small>/100</small></strong>
+            </div>
+            <div className="relevance"><i style={{ width: `${contact.score}%` }} /></div>
+          </Glass>
+        ))}
+      </div>
+    </>
+  )
+}
+
+export function Outreach({ onSelect }: { onSelect?: (id: string) => void }) {
+  const [expanded, setExpanded] = useState(1)
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">OUTREACH AGENT</p>
+          <h2>Calls that feel like you.</h2>
+          <p className="muted">Your queue is clear and moving. The agent has 18 calls lined up today.</p>
+        </div>
+        <button className="primary-button"><Plus size={16} /> Add call</button>
+      </div>
+      <div className="stat-strip">
+        <div><span>CALLS TODAY</span><b>18</b><small className="positive">+4 vs yesterday</small></div>
+        <div><span>INTEREST RATE</span><b>42%</b><small className="positive">+8.5% this week</small></div>
+        <div><span>AVG. CALL DURATION</span><b>8m 42s</b><small>within target</small></div>
+        <div className="strip-status"><i /> Agent is calling</div>
+      </div>
+      <Glass className="call-queue">
+        <div className="section-heading">
+          <div><p className="eyebrow">TODAY, SEPTEMBER 5</p><h2>Call queue</h2></div>
+          <button className="quiet-button">All calls <ChevronDown size={14} /></button>
+        </div>
+        {[
+          ['10:00 AM','Maya Chen','Northstar Labs','Completed','8m 24s','MC','gold'],
+          ['10:30 AM','Elena Rossi','Verity Health','Completed','11m 02s','ER','coral'],
+          ['11:00 AM','Marcus Bell','Harbor Systems','Pending','—','MB','blue'],
+          ['11:30 AM','Theo Adams','Latticeworks','No answer','—','TA','green']
+        ].map((call, i) => (
+          <div key={call[1]}>
+            <button
+              className={`call-row ${expanded === i ? 'expanded' : ''}`}
+              onClick={() => setExpanded(expanded === i ? -1 : i)}
+            >
+              <time>{call[0]}</time>
+              <Avatar initials={call[5]} tone={call[6]} small />
+              <div className="call-person"><b>{call[1]}</b><span>{call[2]}</span></div>
+              <Pill tone={call[3] === 'Completed' ? 'green' : call[3] === 'Pending' ? 'blue' : 'muted'}>{call[3]}</Pill>
+              <span className="duration">{call[4]}</span>
+              <ChevronRight size={17} />
+            </button>
+            {expanded === i && call[3] === 'Completed' && (
+              <div className="transcript">
+                <div className="transcript-copy">
+                  <p className="eyebrow">AI TRANSCRIPT</p>
+                  <p><b>Maya:</b> We have been looking for a way to improve how our team handles inbound demand.</p>
+                  <p><b>Sarah:</b> That is exactly where we help. Our agents qualify and route those conversations automatically.</p>
+                  <p className="highlight"><Sparkles size={14} /> Strong buying signal: asked about implementation timeline.</p>
+                </div>
+                <div className="notes">
+                  <p className="eyebrow">NOTES SUMMARY</p>
+                  <div><span>Interest level</span><Pill tone="gold">Warm</Pill></div>
+                  <div><span>Next step</span><b>Send proposal</b></div>
+                  <div><span>Follow-up</span><b>Sep 9, 2026</b></div>
+                  <button className="text-button" onClick={() => onSelect?.('lead')}>Open lead record <ArrowUpRight size={14} /></button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </Glass>
+    </>
+  )
+}
+
+export function FollowUp() {
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">FOLLOW-UP AGENT</p>
+          <h2>Never let a warm lead cool.</h2>
+          <p className="muted">18 thoughtful follow-ups scheduled across your pipeline.</p>
+        </div>
+        <button className="filter-button"><Filter size={15} /> Needs Escalation <span>3</span></button>
+      </div>
+      <div className="calendar-head">
+        <button className="quiet-button">‹</button>
+        <b>September 2026</b>
+        <button className="quiet-button">›</button>
+        <div className="calendar-legend">
+          <span><i className="gold-dot" /> Warm</span>
+          <span><i className="blue-dot" /> Cold</span>
+          <span><i className="coral-dot" /> Escalated</span>
+        </div>
+      </div>
+      <Glass className="timeline">
+        <div className="timeline-day">
+          <time>Today <small>SEP 5</small></time>
+          <div className="timeline-items">
+            <div className="follow-row warm">
+              <Avatar initials="MC" tone="gold" small />
+              <div><b>Maya Chen <Pill tone="gold">Warm</Pill></b><p>Send proposal recap and implementation timeline</p></div>
+              <span>2:00 PM</span>
+              <MoreHorizontal size={16} />
+            </div>
+            <div className="follow-row escalated">
+              <Avatar initials="ER" tone="coral" small />
+              <div><b>Elena Rossi <Pill tone="coral">Escalated</Pill></b><p>Review pricing objection before next touch</p></div>
+              <span>4:30 PM</span>
+              <MoreHorizontal size={16} />
+            </div>
+          </div>
+        </div>
+        <div className="timeline-day">
+          <time>Tomorrow <small>SEP 6</small></time>
+          <div className="timeline-items">
+            <div className="follow-row cold">
+              <Avatar initials="JB" tone="blue" small />
+              <div><b>Jon Bellamy <Pill tone="blue">Cold</Pill></b><p>Share customer story from Clearpath AI</p></div>
+              <span>10:15 AM</span>
+              <MoreHorizontal size={16} />
+            </div>
+          </div>
+        </div>
+      </Glass>
+    </>
+  )
+}
+
+export function Closing() {
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">CLOSING AGENT</p>
+          <h2>Deals are conversations, too.</h2>
+          <p className="muted">4 active negotiations with a combined value of $182,400.</p>
+        </div>
+        <div className="closing-total"><span>PIPELINE VALUE</span><b>$182,400</b></div>
+      </div>
+      <div className="closing-grid">
+        {[
+          ['Northstar Labs','Maya Chen','$48,000','Contract Review','gold',['Security review','Final pricing','Legal approval'],'MC'],
+          ['Harbor Systems','Marcus Bell','$32,500','In Negotiation','blue',['Confirm seats','ROI business case','Procurement'],'MB'],
+          ['Latticeworks','Theo Adams','$64,000','Proposal Sent','green',['Proposal viewed','Schedule review call','Mutual action plan'],'TA']
+        ].map(deal => (
+          <Glass className="deal-card" key={deal[0]}>
+            <div className="deal-top">
+              <Pill tone={deal[3] === 'Contract Review' ? 'gold' : deal[3] === 'In Negotiation' ? 'blue' : 'green'}>{deal[3]}</Pill>
+              <MoreHorizontal size={17} />
+            </div>
+            <h3>{deal[0]}</h3>
+            <p className="deal-contact"><Avatar initials={deal[6] as string} tone={deal[3] === 'Contract Review' ? 'gold' : 'blue'} small /> {deal[1]}</p>
+            <strong className="deal-value">{deal[2]}</strong>
+            <div className="checklist">
+              {(deal[5] as string[]).map((item, i) => (
+                <div key={item}>
+                  <span className={i === 0 ? 'checked' : ''}>{i === 0 && <Check size={12} />}</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <button className="review-button"><ShieldCheck size={15} /> Flag for Human Review</button>
+          </Glass>
+        ))}
+      </div>
+    </>
+  )
+}
+
+export function LeadRecord() {
+  return (
+    <>
+      <div className="lead-header">
+        <div className="lead-person">
+          <Avatar initials="MC" tone="gold" />
+          <div><p className="eyebrow">LEAD RECORD</p><h2>Maya Chen</h2><p>VP of Revenue at Northstar Labs · Austin, TX</p></div>
+        </div>
+        <Pill tone="gold">Closing</Pill>
+      </div>
+      <Glass className="stepper-card">
+        <div className="stepper">
+          {[
+            ['Found','Contact Finding','Sep 2','Contact identified from target account list.','done'],
+            ['Contacted','Outreach Agent','Sep 3','Call completed. Maya shared that pipeline visibility is a priority.','done'],
+            ['Following Up','Follow-Up Agent','Today','Proposal recap scheduled for 2:00 PM.','done'],
+            ['Closing','Closing Agent','In progress','Contract review is underway. Waiting on security approval.','current'],
+            ['Won / Lost','Orchestrator','Upcoming','The final step will be recorded here.','']
+          ].map(item => (
+            <div className={`step ${item[4]}`} key={item[0]}>
+              <div className="step-marker">{item[4] === 'done' ? <Check size={13} /> : item[4] === 'current' ? <Sparkles size={13} /> : <span />}</div>
+              <div className="step-content">
+                <div><h3>{item[0]}</h3><Pill tone={item[4] === 'current' ? 'gold' : item[4] === 'done' ? 'green' : 'muted'}>{item[2]}</Pill></div>
+                <b>{item[1]}</b>
+                <p>{item[3]}</p>
+                {item[4] === 'current' && <button className="text-button">View agent notes <ArrowUpRight size={14} /></button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Glass>
+    </>
+  )
+}
+
+export function Pipeline() {
+  const stages = ['Found','Contacted','Following Up','Closing','Won','Lost']
+  return (
+    <>
+      <div className="page-intro">
+        <div><p className="eyebrow">LEAD PIPELINE</p><h2>Every opportunity, visible.</h2></div>
+        <div className="toolbar-inline">
+          <button className="quiet-button"><Filter size={14} /> All agents</button>
+          <button className="quiet-button">Last 30 days <ChevronDown size={14} /></button>
+        </div>
+      </div>
+      <div className="kanban">
+        {stages.map(stage => (
+          <div className="kanban-col" key={stage}>
+            <div className="kanban-head">
+              <span>{stage}</span>
+              <b>{leads.filter(l => l.stage === stage).length}</b>
+              <MoreHorizontal size={16} />
+            </div>
+            {leads.filter(l => l.stage === stage).map(lead => (
+              <Glass className="kanban-card" key={lead.name}>
+                <div className="kanban-card-top">
+                  <Avatar initials={lead.initials} tone={lead.tone} small />
+                  <Pill tone={stage === 'Won' ? 'green' : stage === 'Closing' ? 'gold' : stage === 'Lost' ? 'muted' : 'blue'}>{stage}</Pill>
+                </div>
+                <h3>{lead.name}</h3>
+                <p>{lead.company}</p>
+                <strong>{lead.value}</strong>
+                <div className="kanban-foot">
+                  <span>Last touched today</span>
+                  <ChevronRight size={15} />
+                </div>
+              </Glass>
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+export function Escalations() {
+  const [resolved, setResolved] = useState<string[]>([])
+  const items = [
+    ['Pricing objection from Maya Chen','Closing Agent','Maya Chen · Northstar Labs','Maya asked for a 28% discount and wants to compare against an incumbent vendor. The agent recommends holding price and offering an annual commitment incentive.','12 min ago','MC','gold'],
+    ['Unclear buying committee','Outreach Agent','Elena Rossi · Verity Health','Elena is excited, but mentioned that her co-founder signs off on all new tooling. Should we ask for an introduction?','38 min ago','ER','coral'],
+    ['Contract clause needs review','Closing Agent','Marcus Bell · Harbor Systems','Marcus requested a custom data retention clause that falls outside the agent’s approval guardrails.','1 hr ago','MB','blue']
+  ]
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">ESCALATION INBOX</p>
+          <h2>Human judgment, right on time.</h2>
+          <p className="muted">Your agents know when to ask. Here are the decisions waiting for you.</p>
+        </div>
+        <Pill tone="coral">3 need review</Pill>
+      </div>
+      <div className="escalation-list">
+        {items.map(item => !resolved.includes(item[0]) && (
+          <Glass className="escalation-card" key={item[0]}>
+            <div className="escalation-left">
+              <div className="new-mark">NEW</div>
+              <Avatar initials={item[5]} tone={item[6]} />
+              <div>
+                <p className="eyebrow">{item[1]}</p>
+                <h3>{item[0]}</h3>
+                <b>{item[2]}</b>
+                <p className="summary">{item[3]}</p>
+                <time><Clock3 size={13} /> {item[4]}</time>
+              </div>
+            </div>
+            <div className="escalation-actions">
+              <button className="approve" onClick={() => setResolved([...resolved, item[0]])}><Check size={15} /> Approve</button>
+              <button onClick={() => setResolved([...resolved, item[0]])}><X size={15} /> Reject</button>
+              <button><UserRound size={15} /> Take over</button>
+              <button><MessageSquare size={15} /> Message agent</button>
+            </div>
+          </Glass>
+        ))}
+      </div>
+    </>
+  )
+}
+
+export function ContactDatabase() {
+  const [query, setQuery] = useState('')
+  const filtered = contacts.filter(c => `${c.name} ${c.company} ${c.role}`.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <>
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">CONTACT DATABASE</p>
+          <h2>Your relationship memory.</h2>
+          <p className="muted">1,284 contacts across every agent and source.</p>
+        </div>
+        <button className="primary-button"><ArrowUpRight size={16} /> Export CSV</button>
+      </div>
+      <Glass className="database-card">
+        <div className="database-toolbar">
+          <div className="search-field">
+            <Search size={16} />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name, company, or role" />
+          </div>
+          <button className="quiet-button"><Filter size={14} /> Columns</button>
+          <button className="quiet-button"><Filter size={14} /> Filter</button>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" /></th>
+                <th>Name</th>
+                <th>Designation</th>
+                <th>Company</th>
+                <th>Location</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Last Contacted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(c => (
+                <tr key={c.name}>
+                  <td><input type="checkbox" /></td>
+                  <td><div className="table-name"><Avatar initials={c.initials} tone={c.tone} small /><b>{c.name}</b></div></td>
+                  <td>{c.role}</td>
+                  <td>{c.company}</td>
+                  <td>{c.location}</td>
+                  <td><span className="source"><Sparkles size={13} /> Agent</span></td>
+                  <td><Pill tone={c.score > 90 ? 'gold' : 'blue'}>{c.score > 90 ? 'Warm' : 'New'}</Pill></td>
+                  <td>Sep {c.score > 90 ? '4' : '2'}, 2026</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Glass>
+    </>
+  )
+}
+
+export function Login({ onContinue }: { onContinue: () => void }) {
+  return (
+    <main className="login-page">
+      <div className="login-shape shape-one" />
+      <div className="login-shape shape-two" />
+      <div className="login-card">
+        <div className="login-brand"><span className="brand-mark"><Sparkles size={15} /></span><span>sale<strong>goodman</strong></span></div>
+        <p className="eyebrow">WELCOME BACK</p>
+        <h1>Your autonomous<br /><em>sales team.</em></h1>
+        <p className="login-copy">A little less chasing. A lot more closing.</p>
+        <label>Email address<input type="email" placeholder="you@company.com" /></label>
+        <label>Password <a href="#forgot">Forgot?</a><input type="password" placeholder="••••••••••••" /></label>
+        <button className="primary-button login-continue" onClick={onContinue}>Continue <ArrowUpRight size={16} /></button>
+        <div className="divider"><span>or continue with</span></div>
+        <button className="google-button"><span>G</span> Continue with Google</button>
+        <small className="terms">By continuing, you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.</small>
+      </div>
+      <p className="login-footer">SaleGoodman <span>·</span> Built for the beautifully ambitious</p>
+    </main>
+  )
+}
+
+export default function SaleGoodmanApp({ initialView = 'dashboard' }: { initialView?: string }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [mobileNav, setMobileNav] = useState(false)
+
+  // Derive active view from pathname or initialView
+  const currentView = useMemo(() => {
+    if (!pathname || pathname === '/') return initialView || 'dashboard'
+    const clean = pathname.replace(/^\//, '').split('/')[0]
+    return clean || initialView || 'dashboard'
+  }, [pathname, initialView])
+
+  const [active, setActive] = useState<string>(currentView)
+
+  useEffect(() => {
+    if (currentView) {
+      setActive(currentView)
+    }
+  }, [currentView])
+
+  // Support hash routing fallback on root path
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '').trim().toLowerCase()
+      if (hash && hash !== active) {
+        if (hash === 'login') {
+          router.push('/login')
+        } else if (nav.some(n => n.id === hash) || hash === 'lead') {
+          router.push(`/${hash}`)
+        }
+      }
+    }
+    handleHash()
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+  }, [active, router])
+
+  const navigate = useCallback((id: string) => {
+    setActive(id)
+    setMobileNav(false)
+    const target = id === 'dashboard' ? '/' : `/${id}`
+    router.push(target)
+  }, [router])
+
+  const openLogin = useCallback(() => {
+    router.push('/login')
+  }, [router])
+
+  const closeLogin = useCallback(() => {
+    router.push('/')
+  }, [router])
+
+  if (active === 'login') {
+    return <Login onContinue={closeLogin} />
+  }
+
+  const page = useMemo(() => {
+    if (active === 'contacts') return <ContactFinding />
+    if (active === 'outreach') return <Outreach onSelect={navigate} />
+    if (active === 'followup') return <FollowUp />
+    if (active === 'closing') return <Closing />
+    if (active === 'lead') return <LeadRecord />
+    if (active === 'pipeline') return <Pipeline />
+    if (active === 'escalations') return <Escalations />
+    if (active === 'database') return <ContactDatabase />
+    return <Dashboard onSelect={navigate} />
+  }, [active, navigate])
+
+  const current = nav.find(n => n.id === active)
+  const headerTitle = active === 'lead' ? 'Lead Record' : (current?.label || 'Orchestrator')
+  const headerEyebrow = active === 'dashboard' ? 'GOOD MORNING, SARAH' : 'SALEGOODMAN WORKSPACE'
+
+  return (
+    <div className="app-shell">
+      <Sidebar active={active} onSelect={navigate} />
+      <div className={`mobile-sidebar ${mobileNav ? 'open' : ''}`}>
+        <Sidebar active={active} onSelect={navigate} />
+      </div>
+      <main className="main-content">
+        <Header
+          title={headerTitle}
+          eyebrow={headerEyebrow}
+          onMenu={() => setMobileNav(!mobileNav)}
+        />
+        <div className="page-content">{page}</div>
+      </main>
+      <button className="floating-help" onClick={openLogin}>
+        <Bot size={17} /> Ask SaleGoodman
+      </button>
+    </div>
+  )
+}
