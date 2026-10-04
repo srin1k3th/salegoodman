@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark squircle base -->
+  <rect width="64" height="64" rx="16" fill="#171412" />
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#3b332c" stroke-width="1.5" />
+  
+  <!-- Primary Golden Sparkle / Star Emblem -->
+  <path d="M30 13C30 22.3888 22.3888 30 13 30C22.3888 30 30 37.6112 30 47C30 37.6112 37.6112 30 47 30C37.6112 30 30 22.3888 30 13Z" fill="url(#gold_grad)" />
+  
+  <!-- Secondary Accompanying Sparkle -->
+  <path d="M46 13C46 16.866 42.866 20 39 20C42.866 20 46 23.134 46 27C46 23.134 49.134 20 53 20C49.134 20 46 16.866 46 13Z" fill="#edd09b" />
+  
+  <defs>
+    <linearGradient id="gold_grad" x1="13" y1="13" x2="47" y2="47" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fae2b6" />
+      <stop offset="0.45" stop-color="#dcae68" />
+      <stop offset="1" stop-color="#b87d44" />
+    </linearGradient>
+  </defs>
+</svg>
