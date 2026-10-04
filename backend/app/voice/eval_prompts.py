@@ -27,7 +27,6 @@ from typing import NamedTuple
 from datetime import datetime, timezone
 
 from app.voice.llm import ConversationEngine
-from app.services.outreach_agent import OutreachAgent
 
 
 class EvalScenario(NamedTuple):
@@ -209,7 +208,6 @@ class PromptEvalHarness:
     def __init__(self, is_live: bool = False):
         self.is_live = is_live
         self.engine = ConversationEngine()
-        self.outreach_agent = OutreachAgent("eval-workspace")
 
     def _generate_mock_response(self, scenario: EvalScenario) -> str:
         """Deterministic high-quality fallback responses used when running offline."""

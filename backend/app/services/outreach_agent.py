@@ -14,14 +14,29 @@ class OutreachAgent:
 
     def __init__(self, workspace_id: str):
         self.workspace_id = workspace_id
-        self.config = self._load_config()
+        self._config: dict | None = None  # lazy-loaded on first access
+
+    @property
+    def config(self) -> dict:
+        """Lazy-load config from Supabase on first access."""
+        if self._config is None:
+            self._config = self._load_config()
+        return self._config
+
+    @config.setter
+    def config(self, value: dict):
+        """Allow tests and eval harness to inject config directly."""
+        self._config = value
 
     def _load_config(self) -> dict:
-        result = supabase_admin.table("agent_config").select("config") \
-            .eq("workspace_id", self.workspace_id) \
-            .eq("agent_type", "outreach") \
-            .single().execute()
-        return result.data["config"] if result.data else {}
+        try:
+            result = supabase_admin.table("agent_config").select("config") \
+                .eq("workspace_id", self.workspace_id) \
+                .eq("agent_type", "outreach") \
+                .single().execute()
+            return result.data["config"] if result.data else {}
+        except Exception:
+            return {}
 
     def generate_call_opening(self, prospect_name: str, company: str) -> str:
         """
