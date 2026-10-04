@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     database_url: str = ""
 
     # ── AI / Voice Pipeline ───────────────────────────────────
-    groq_api_key: str = ""
+    # One key powers everything: LLM (2.5-flash), STT (3.5-transcribe), TTS (3.8-flash-tts)
     gemini_api_key: str = ""
 
     # ── CORS ──────────────────────────────────────────────────
