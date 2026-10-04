@@ -171,6 +171,7 @@ CREATE INDEX idx_activity_created ON activity_log(workspace_id, created_at DESC)
 
 -- ── Row Level Security ──────────────────────────────────────
 
+ALTER TABLE workspace ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "user" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lead ENABLE ROW LEVEL SECURITY;
@@ -182,6 +183,8 @@ ALTER TABLE agent_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: Users can only access records in their workspace
+CREATE POLICY "workspace_access" ON workspace FOR ALL
+    USING (id = (SELECT workspace_id FROM "user" WHERE id = auth.uid()));
 CREATE POLICY "workspace_isolation" ON contact FOR ALL
     USING (workspace_id = (SELECT workspace_id FROM "user" WHERE id = auth.uid()));
 
